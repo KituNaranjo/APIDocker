@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tareas App</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+            margin: 20px 0;
+        }
+
+        form {
+            text-align: center;
+            margin-bottom: 20px;
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        input {
+            padding: 8px;
+            margin-bottom: 16px;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        button {
+            padding: 10px;
+            background-color: #4caf50;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        button#eliminarTablaBtn {
+            background-color: #f44336;
+            margin-left: 10px;
+            margin-top: 5px;
+        }
+
+        table {
+            border-collapse: collapse;
+            width: 90%;
+            margin-top: 20px;
+            background-color: #fff;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        th, td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #4caf50;
+            color: #fff;
+        }
+
+        .acciones {
+            display: flex;
+            align-items: center;
+        }
+
+        .checkbox-column {
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <h1>Tareas App</h1>
+    <form id="tareaForm">
+        <input type="text" id="nombre" name="nombre" placeholder="Nombre" required>
+        <br>
+        <input type="text" id="tarea" name="tarea" placeholder="Tarea" required>
+        <br>
+        <button type="submit">Agregar Tarea</button>
+        <button type="button" id="eliminarTablaBtn">Eliminar Tabla</button>
+    </form>
+    <table id="tareasTable">
+        <thead>
+            <tr>
+                <th>Nombre</th>
+                <th>Tarea</th>
+                <th class="checkbox-column">Completado</th>
+            </tr>
+        </thead>
+        <tbody id="tareasList"></tbody>
+    </table>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const tareaForm = document.getElementById('tareaForm');
+            const tareasList = document.getElementById('tareasList');
+            const eliminarTablaBtn = document.getElementById('eliminarTablaBtn');
+
+            tareaForm.addEventListener('submit', async function (event) {
+                event.preventDefault();
+
+                const formData = new FormData(tareaForm);
+                const nombre = formData.get('nombre');
+                const tarea = formData.get('tarea');
+
+                try {
+                    const response = await fetch('http://localhost:8000/tareas/', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({ nombre, tarea }),
+                    });
+
+                    if (!response.ok) {
+                        throw new Error('Error al agregar tarea');
+                    }
+
+                    cargarTareas();
+                    tareaForm.reset();
+                } catch (error) {
+                    console.error(error);
+                }
+            });
+
+            eliminarTablaBtn.addEventListener('click', async function () {
+                try {
+                    const response = await fetch('http://localhost:8000/tareas/', {
+                        method: 'DELETE',
+                    });
+
+                    if (!response.ok) {
+                        throw new Error('Error al eliminar la tabla');
+                    }
+
+                    cargarTareas();
+                } catch (error) {
+                    console.error(error);
+                }
+            });
+
+            async function cargarTareas() {
+                try {
+                    const response = await fetch('http://localhost:8000/tareas/');
+                    const tareasData = await response.json();
+
+                    tareasList.innerHTML = '';
+
+                    tareasData.forEach(tarea => {
+                        const tareaItem = document.createElement('tr');
+                        tareaItem.innerHTML = `
+                            <td>${tarea.nombre}</td>
+                            <td>${tarea.tarea}</td>
+                            <td class="acciones">
+                                <input type="checkbox" id="completado_${tarea.id}" name="completado_${tarea.id}"> Completado
+                            </td>
+                            <td class="acciones">
+                                <input type="checkbox" id="noCompletado_${tarea.id}" name="noCompletado_${tarea.id}"> No Completado
+                            </td>
+                        `;
+                        tareasList.appendChild(tareaItem);
+                    });
+                } catch (error) {
+                    console.error(error);
+                }
+            }
+
+            cargarTareas();
+        });
+    </script>
+</body>
+</html>
